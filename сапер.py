@@ -1,18 +1,20 @@
 import os
 import random
 import pygame
-from pygame import color
+
 pygame.init ()
-opclose=2
 queue=[]
+pole=[]
+field=[]
+bomb_count=7
 empty=0
 otkrito=1
-bomb=2
+bomb=opclose =2
 close=3
-flag=10
 size= (615,615)
 kontur = 6
-W=22
+W=10
+
 pygame.display.set_caption("Saper")
 okno= pygame.display.set_mode(size)
 time= pygame.time.Clock()
@@ -26,8 +28,7 @@ cl7=pygame.image.load(os.path.join("blocks","op7.png"))
 cl8=pygame.image.load(os.path.join("blocks","op8.png"))
 openn=pygame.image.load(os.path.join("blocks","open.png"))
 closee=pygame.image.load(os.path.join("blocks","close.png"))
-flagg=pygame.image.load(os.path.join("blocks","flag.png"))
-bombb=pygame.image.load(os.path.join("blocks","bomb.png"))
+
 scale_open= pygame.transform.scale(openn,(30,30))
 scale_close = pygame.transform.scale(closee,(30,30))
 scale_cl1 = pygame.transform.scale(cl1,(30,30))
@@ -38,33 +39,32 @@ scale_cl5 = pygame.transform.scale(cl5,(30,30))
 scale_cl6 = pygame.transform.scale(cl6,(30,30))
 scale_cl7 = pygame.transform.scale(cl7,(30,30))
 scale_cl8 = pygame.transform.scale(cl8,(30,30))
-scale_bomb =pygame.transform.scale(bombb,(30,30))
 closes=[scale_cl1,scale_cl2,scale_cl3,scale_cl4,scale_cl5,scale_cl6,scale_cl7,scale_cl8]
-pole=[]
-field=[]
-flagi=[]
-bomb_count=99
-T=True
-#создание массива под поле. принимает на вход количество строки создает массив путем повторения массива а  #
-#создание бомб и областей помечающих, что бомба рядом получает на вход количество бомб и создает цикл по их количеству после чего 
-# полю задаются случайные координаты для получения случайного местоположения бомб#
+
 def set_bomb (bomb_count):
-    for x in range (bomb_count):
+    ''' Принимает на вход bomb_count, переменную которая обозначает количество бомб на полею. Функция создает бомбы и
+    области, которые помечают, что что бомба где-то рядом. Функция получает на вход количество бомб и создает цикл в котором присваевает
+    нужному количеству бомб случайные координаты, после этого вокруг этого места выделяется область, обозначающая, что бомба рядом. после
+    всех действий функция выводит измененное поле'''
+    while bomb_count>0:
         q=random.randint(0,W-1)
         p=random.randint(0,W-1)
-        pole[q][p] = bomb
-        # создаем приблеженные к бомбам клетки что бы зарание в будующем записать в них количество бомб по близости
-        for i in range (3):
-            for j in range(3):
-                l=q-i+1
-                n=p-j+1
-                if  l>=0 and n>=0 and l<W and n<W:
-                    if  pole[l][n]!=bomb:
-                        pole[l][n]=close
-    return(pole)
+        if pole[q][p] != bomb:
+            pole[q][p] = bomb
+            bomb_count=bomb_count-1
+            for i in range (3):
+                for j in range(3):
+                    l=q-i+1
+                    n=p-j+1
+                    if  l>=0 and n>=0 and l<W and n<W:
+                        if  pole[l][n]!=bomb:
+                            pole[l][n]=close
+    return pole
 
 def check_open ():
-    #открытие соседних клеток с помощью очереди#
+    ''' Функция основанная на очереди. перед ней в коде стол первый параметр, который войдет в эту очень и запустит цикл проверки соседей клетки на
+    наличие соседей среди еще закрытых клеток. Если сосед будет найден то он будут добавлен в очередь для последующей проверки и будет добавлен на
+    игровое поле как открытая ячейка. Очередь будет работать пока соседи не закончатся. В конце функция выводит обновленное поле'''
     while queue:
         X,Y= queue[0]
         queue.pop(0)
@@ -86,9 +86,12 @@ def check_open ():
     return pole
 
 def check_close():
-    #проверка и подсчет количества бомб по момедству#
+    '''Функция определяет количество бомб в клетках рядом с бомбой и запоминает его в отдельном поле (field), после чего проверяет есть ли рядом с этой 
+    клеткой открытое поле и  если оно есть, то это запоминается в отдельном поле (field). Функция возвращает измененное  поле (field)'''
     k=0
     c=0
+    print (field)
+    print (pole)
     for X in range (W):
         for Y in range(W):
             if pole[X][Y]==close or field[X][Y]==opclose :
@@ -103,32 +106,34 @@ def check_close():
                 if k!=0 and c!=0:
                     field[X][Y]=10+k
                 k=0  
-                c=0  
+                c=0
+    print (field)
+    return field  
 
-#основной цикл
 def run():
+    '''Функция содержит бесконечный цикл, который позволяет команде работать почти постоянно. 
+    1 мы проверяем события. если они случаться, то событие QUIT позволит нам закрыть окно, а  MOUSEBUTTONDOWN понять, когда нажимаются кнопки мЫшы
+    2 позволяет постоянно отрисовывать поле'''
     set_bomb(bomb_count)
-    while T ==True:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-            #реагирование поля на нажатие мышки#
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x_mouse, y_mouse = pygame.mouse.get_pos()
                 col = x_mouse //(kontur+W)
                 row= y_mouse//(kontur+W)
-                if event.button == 1 and  pole[row][col]== bomb :
-                    pygame.quit()
+                if event.button == 1 :
+                    if (pole [row][col]==empty or pole [row][col]==close) and (field [row][col]>18 or field [row][col]<11) :
+                        pole [row][col]=otkrito
+                        field[row][col]=opclose
+                        queue.append([row,col])
+                        queue.append([row,col])
+                        check_open()
+                        check_close()
+                    elif pole [row][col]==bomb :
+                        pygame.quit()
 
-                if  event.button == 1 and (pole [row][col]==empty or pole [row][col]==close) and (field [row][col]>18 or field [row][col]<11) :
-                    pole [row][col]=otkrito
-                    field[row][col]=opclose
-                    queue.append([row,col])
-                    queue.append([row,col])
-                    check_open()
-                    check_close()
-                
-        #Отрисовка поляи проверка каждой клетки на ьл чем она является и в какой цвет ей окрашиваться#
         for row in range (W):
             for col in range (W):
                 x = col * W +(col)*kontur 
@@ -143,11 +148,15 @@ def run():
 
         pygame.display.flip()
         time.tick(60)
+
 for i in range (W):
     a=[0]*W
     pole.append(a)
 for i in range (W):
     a=[0]*W
     field.append(a)
-    flagi.append(a)
 run()
+
+
+
+
